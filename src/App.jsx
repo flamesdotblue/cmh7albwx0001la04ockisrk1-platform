@@ -1,28 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Book from './components/Book'
+import Toolbar from './components/Toolbar'
+import StickyNotes from './components/StickyNotes'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [placingSticky, setPlacingSticky] = useState(false)
+  const bookRef = useRef(null)
+
+  const [entries, setEntries] = useState(() => {
+    const saved = localStorage.getItem('diary-entries')
+    if (saved) return JSON.parse(saved)
+    // Initialize with 8 blank pages (4 spreads)
+    return Array.from({ length: 8 }).map((_, idx) => ({ id: idx, text: '' }))
+  })
+
+  useEffect(() => {
+    localStorage.setItem('diary-entries', JSON.stringify(entries))
+  }, [entries])
+
+  const handleUpdateEntry = (id, text) => {
+    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, text } : e)))
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
+      <Toolbar
+        placingSticky={placingSticky}
+        onTogglePlacing={() => setPlacingSticky((v) => !v)}
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 pb-12">
+        <div ref={bookRef} className="relative">
+          <StickyNotes containerRef={bookRef} placing={placingSticky} onPlaced={() => setPlacingSticky(false)} />
+          <Book entries={entries} onUpdateEntry={handleUpdateEntry} />
         </div>
       </div>
     </div>
   )
 }
-
-export default App
